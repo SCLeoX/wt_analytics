@@ -16,10 +16,10 @@ use indoc::indoc;
 use crate::models::Chapter;
 
 fn get_current_timestamp() -> i64 {
-    return SystemTime::now()
+    SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .expect("Time went backwards")
-        .as_millis().try_into().expect("Hello future");
+        .as_millis().try_into().expect("Hello future")
 }
 
 pub struct DbExecutor(PgConnection);
@@ -32,10 +32,10 @@ pub fn get_db_executor() -> Addr<DbExecutor> {
     dotenv().ok();
     let database_url = env::var("DATABASE_URL")
         .expect("DATABASE_URL must be set");
-    return SyncArbiter::start(4, move || {
+    SyncArbiter::start(4, move || {
         DbExecutor(PgConnection::establish(&database_url)
-            .expect(&format!("Error connecting to {}.", database_url)))
-    });
+            .unwrap_or_else(|_| panic!("Error connecting to {}.", database_url)))
+    })
 }
 
 pub struct RecordVisit {
@@ -52,14 +52,14 @@ fn get_chapter(connection: &PgConnection, relative_path_value: &str) -> Result<C
         .filter(relative_path.eq(relative_path_value))
         .first::<Chapter>(connection)
         .optional()?;
-    return if let Some(chapter) = chapter {
+    if let Some(chapter) = chapter {
         Ok(chapter)
     } else {
         let row: Chapter = insert_into(chapters)
             .values(relative_path.eq(relative_path_value))
             .get_result(connection)?;
         Ok(row)
-    };
+    }
 }
 
 fn inc_visit(connection: &PgConnection, chapter: &Chapter) -> Result<(), Error> {
@@ -67,7 +67,7 @@ fn inc_visit(connection: &PgConnection, chapter: &Chapter) -> Result<(), Error> 
     diesel::update(chapter)
         .set(visit_count.eq(visit_count + 1))
         .execute(connection)?;
-    return Ok(());
+    Ok(())
 }
 
 impl Handler<RecordVisit> for DbExecutor {
@@ -84,7 +84,7 @@ impl Handler<RecordVisit> for DbExecutor {
             ))
             .execute(connection)?;
         inc_visit(connection, &chapter)?;
-        return Ok(());
+        Ok(())
     }
 }
 
@@ -121,7 +121,7 @@ impl Handler<ListChaptersAll> for DbExecutor {
             visit_count: showing_chapter.visit_count,
             relative_path: showing_chapter.relative_path,
         }).collect();
-        return Ok(chapter_visit_info);
+        Ok(chapter_visit_info)
     }
 }
 
@@ -135,14 +135,14 @@ pub enum TimeFrame {
 }
 
 impl TimeFrame {
-    fn get_milliseconds(&self) -> i64 {
-        return match self {
+    fn get_milliseconds(self) -> i64 {
+        match self {
             TimeFrame::HOUR => 1000 * 3600,
             TimeFrame::DAY => 1000 * 3600 * 24,
             TimeFrame::WEEK => 1000 * 3600 * 24 * 7,
             TimeFrame::MONTH => 1000 * 3600 * 24 * 30,
             TimeFrame::YEAR => 1000 * 3600 * 24 * 365,
-        };
+        }
     }
 }
 
@@ -188,6 +188,6 @@ impl Handler<ListChapterRecent> for DbExecutor {
             visit_count: showing_chapter.visit_count,
             relative_path: showing_chapter.relative_path,
         }).collect();
-        return Ok(chapter_visit_info);
+        Ok(chapter_visit_info)
     }
 }

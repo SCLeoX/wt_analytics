@@ -28,10 +28,10 @@ async fn count(req: HttpRequest, state: web::Data<AppState>, content: String) ->
             );
         }
     }
-    return Ok(HttpResponse::Forbidden()
+    Ok(HttpResponse::Forbidden()
         .body("POST /count may only be accessed via whitelisted origins.")
         .with_header("Vary", "Origin")
-    );
+    )
 }
 
 #[derive(Deserialize)]
@@ -40,7 +40,7 @@ struct ChapterAllQuery {
 }
 async fn chapter_all(state: web::Data<AppState>, query: web::Query<ChapterAllQuery>) -> Result<impl Responder, WTError> {
     let result = state.db.send(ListChaptersAll { page: query.page }).await??;
-    return Ok(HttpResponse::Ok().json(result).with_header("Access-Control-Allow-Origin", "*"));
+    Ok(HttpResponse::Ok().json(result).with_header("Access-Control-Allow-Origin", "*"))
 }
 
 #[derive(Deserialize)]
@@ -50,7 +50,7 @@ struct ChapterRecentQuery {
 }
 async fn chapter_recent(state: web::Data<AppState>, query: web::Query<ChapterRecentQuery>) -> Result<impl Responder, WTError> {
     let result = state.db.send(ListChapterRecent { page: query.page, time_frame: query.time_frame }).await??;
-    return Ok(HttpResponse::Ok().json(result).with_header("Access-Control-Allow-Origin", "*"));
+    Ok(HttpResponse::Ok().json(result).with_header("Access-Control-Allow-Origin", "*"))
 }
 
 struct AppState {

@@ -11,13 +11,13 @@ pub enum WTError {
 
 impl<T: Error + 'static> From<T> for WTError {
     fn from(error: T) -> Self {
-        return WTError::InternalError(Box::new(error));
+        WTError::InternalError(Box::new(error))
     }
 }
 
 impl Display for WTError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        return match self {
+        match self {
             WTError::InternalError(_) => write!(f, "An internal error occurred."),
         }
     }
